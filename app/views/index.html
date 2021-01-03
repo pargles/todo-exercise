@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@7.0.0-alpha.15"></script>
+    <title>Todos</title>
+</head>
+<body>
+<div id="main"></div>
+
+<script type="text/babel" data-presets="es2015, react, stage-2">
+    const BASE_URL = "http://localhost:5000"
+    const TodosComponent = ({onAdd, onRemove, todos, error}) => (
+        <div>
+            <h1>Todos</h1>
+            <ul>
+                {todos.map(currrentTodo => <li key={currrentTodo.priority}>{currrentTodo.priority} {currrentTodo.name}
+                    {currrentTodo.name && <button onClick={(e) => {
+                        onRemove(currrentTodo.priority)
+                    }}>DONE
+                    </button>}
+                </li>)}
+            </ul>
+            <input type="text" id="newTodo" placeholder="Name"/>
+            <br/>
+            <input type="text" id="priority" placeholder="Priority"/>
+            <br/>
+            <button onClick={() => onAdd(
+                {name: document.getElementById('newTodo').value,
+                    priority: document.getElementById('priority').value}
+                    )}>
+                Add TODO
+            </button>
+            {error && <div>{error}</div>}
+        </div>
+    );
+
+    function concatenateCurrentAndMissingTodos(currentTodos, missingTodos){
+        const missingTodosArray = missingTodos.map(priority => {return {name: null, priority: priority}})
+        let allTodos = currentTodos.concat(missingTodosArray)
+        allTodos = allTodos.sort(function(a, b) {return a.priority - b.priority})
+        return allTodos
+    }
+
+    const RootComponent = () => {
+        const [todos, setTodos] = React.useState([]);
+        const [error, setError] = React.useState(null);
+
+        const fetchTodos = async () => {
+            return await fetch(`${BASE_URL}/todos?includeMissingTodos=true`).then(r => r.json());
+        }
+
+        const deleteTodo = async (priority) => {
+            return await fetch(
+                `${BASE_URL}/todos/${priority}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'DELETE',
+                }
+            );
+        }
+
+        // this runs once the page is loaded or refreshed
+        React.useEffect(() => {
+            fetchTodos().then(response => {
+                const {current, missing} = response
+                const allTodos = concatenateCurrentAndMissingTodos(current, missing)
+                setTodos(allTodos)
+            })
+        }, [])
+
+        const addTodo = (todo) => {
+            return fetch(
+                `${BASE_URL}/todos`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST',
+                    body: JSON.stringify(todo)
+                }
+            );
+        }
+
+        return <TodosComponent
+            todos={todos}
+            error={error}
+            onAdd={(value) => {
+                addTodo(value).then((response) => {
+                    if (!response.ok) {
+                        setError(response.statusText)
+                    }else{
+                        setError(null)
+                        fetchTodos().then((response) => {
+                            const {current, missing} = response
+                            const allTodos = concatenateCurrentAndMissingTodos(current, missing)
+                            setTodos(allTodos)
+                        });
+                    }
+                })
+            }}
+            onRemove={(priority) => {
+                // delete by priority
+                deleteTodo(priority).then(
+                    (response) => {
+                        if (!response.ok) {
+                            setError(response.statusText)
+                        }else{
+                            setError(null)
+                            fetchTodos().then(response => {
+                                const {current, missing} = response
+                                const allTodos = concatenateCurrentAndMissingTodos(current, missing)
+                                setTodos(allTodos)
+                            })
+                        }
+                    }
+                )
+            }}
+        />;
+    }
+
+    ReactDOM.render(
+        <RootComponent/>,
+        document.getElementById('main')
+    );
+</script>
+</body>
+</html>

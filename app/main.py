@@ -1,12 +1,28 @@
-from typing import Optional
-
 import uvicorn
+from typing import Optional
 from fastapi import FastAPI, HTTPException
-
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from app.models import Todo, AllTodos
 from app.services import add_todo, delete_todo, list_all_todos
 
 app = FastAPI()
+
+# to make the frontend available
+app.mount("/views", StaticFiles(directory="app/views"), name="views")
+
+# to allow localhost requests
+origins = [
+    "http://localhost:5000",
+    "http://127.0.0.1:5000"
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")
@@ -42,4 +58,4 @@ def list_todos(includeMissingTodos: Optional[bool] = False):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=5000, log_level="info")
+    uvicorn.run(app, host="localhost", port=5000, log_level="info")
