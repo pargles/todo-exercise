@@ -3,10 +3,6 @@
 ## Tech Stack
 - Python 3.8
 - [FastAPI](https://fastapi.tiangolo.com/)
-
-## API Documentation
-FastApi automatically create a swagger documentation, which is available at the following link: 
-[http://localhost:5000/docs](http://localhost:5000/docs)
  
 ## Quickstart
 ### Running it locally via shell and vanilla Python & virtualenv 
@@ -22,6 +18,10 @@ uvicorn app.main:app --port 5000
 
 ### Running React frontend
 Frontend can be accessed at: [http://localhost:5000/views/index.html](http://localhost:5000/views/index.html)
+
+### API Documentation
+FastApi automatically creates a Swagger REST API documentation, which is available at the following link: 
+[http://localhost:5000/docs](http://localhost:5000/docs)
 
 ### Running tests
 ```shell script
